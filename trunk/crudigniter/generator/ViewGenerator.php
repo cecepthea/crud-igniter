@@ -61,7 +61,7 @@ class ViewGenerator extends Generator
 		
 		$templates = scandir(TEMPLATES_PATH . DS . 'views' . DS);
 		foreach ($templates as $template) {
-			if (preg_match('/^[a-z]+\.php$/i', $template)) {
+			if (preg_match('/^.+\.php$/i', $template)) {
 				
 				// If isn't the CRUD template
 				if ( ($template != 'add.php') && ($template != 'edit.php') && ($template != 'index.php') )
@@ -123,16 +123,17 @@ class ViewGenerator extends Generator
 			$this->tables[$this->choosedLayer]['Validate'] = true;
 
 			foreach ($rules[0] as $rule) {
-				if (preg_match_all('/(?:\'|"){1}[\w\|\[\]]+(?:\'|"){1}/i', $rule, $parameters)) {
+				if (preg_match_all('/(?:\'|"){1}.+(?:\'|"){1}/i', $rule, $parameters)) {
+					$parameters = eval("return ViewGenerator::getParameters({$parameters[0][0]});");
 
-					$fieldName = substr(substr($parameters[0][0], 1), 0, -1);
-					$fieldHumanName = substr(substr($parameters[0][1], 1), 0, -1);
+					$fieldName = $parameters[0];
+					$fieldHumanName = $parameters[1];
 					
 					foreach ($this->tables[$this->choosedLayer]['Fields'] as $key => $field) {
 						if ($field['Field'] == $fieldName) {
 							$this->tables[$this->choosedLayer]['Fields'][$key]['Name'] = $fieldHumanName;
 							
-							if (isset($parameters[0][2]))
+							if (isset($parameters[2]))
 								$this->tables[$this->choosedLayer]['Fields'][$key]['Validate'] = true;
 
 							break;
@@ -175,6 +176,20 @@ class ViewGenerator extends Generator
 				$this->humanName($this->tables[$this->choosedLayer]['Fields'][$i]);
 				
 		$this->humanName($this->tables[$this->choosedLayer]['Primary']);
+	}
+	
+	/**
+	 * Get the parameters of _set_rules in Controller
+	 * 
+	 * @since 1.1
+	 * @access private
+	 * @return array
+	 * @param string A comma separated string with the parameters
+	 * @static
+	 */
+	private static function getParameters()
+	{
+		return func_get_args();
 	}
 	
 	/**
